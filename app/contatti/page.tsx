@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { Contact } from '@/types';
-import { Mail, Phone, MapPin, Tag, X, Plus, Edit, Trash2, Building, User } from 'lucide-react';
+import { Mail, Phone, MapPin, Tag, X, Plus, Edit, Trash2, Building, User, Users } from 'lucide-react';
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -103,7 +103,7 @@ export default function ContactsPage() {
             </div>
           ) : contacts.length === 0 ? (
             <div className="card text-center py-12">
-              <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Nessun contatto trovato</h3>
               <p className="text-gray-600 mb-4">Inizia aggiungendo il tuo primo contatto</p>
               <button
