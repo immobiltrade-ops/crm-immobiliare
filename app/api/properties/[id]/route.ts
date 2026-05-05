@@ -12,7 +12,14 @@ export async function GET(
       where: { id: params.id },
       include: {
         owners: {
-          include: { contact: true },
+          include: {
+            contact: true,
+          },
+        },
+        opportunities: {
+          include: {
+            contact: true,
+          },
         },
       },
     });
@@ -82,6 +89,23 @@ export async function PUT(
           skipDuplicates: true,
         });
       }
+    }
+
+    // Collega o aggiorna il proprietario singolo se fornito
+    if (body.ownerId) {
+      await prisma.propertyOwner.upsert({
+        where: {
+          propertyId_contactId: {
+            propertyId: params.id,
+            contactId: body.ownerId,
+          },
+        },
+        create: {
+          propertyId: params.id,
+          contactId: body.ownerId,
+        },
+        update: {},
+      });
     }
 
     const result = await prisma.property.findUnique({

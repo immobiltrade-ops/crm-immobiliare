@@ -10,6 +10,14 @@ export async function GET(
   try {
     const contact = await prisma.contact.findUnique({
       where: { id: params.id },
+      include: {
+        properties: true,
+        opportunities: {
+          include: {
+            property: true,
+          },
+        },
+      },
     });
 
     if (!contact) {

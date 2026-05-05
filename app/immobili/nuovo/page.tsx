@@ -31,6 +31,7 @@ export default function NuovoImmobilePage() {
     piano: '',
     descrizione: '',
     caratteristiche: [] as string[],
+    ownerId: '',
     ownerIds: [] as string[],
     acceptsExchange: false,
     exchangeNotes: '',
@@ -190,40 +191,53 @@ export default function NuovoImmobilePage() {
             {/* Proprietari */}
             <div className="card">
               <h2 className="text-lg font-semibold text-gray-900 mb-3">👥 Proprietari</h2>
-              {contacts.length === 0 ? (
-                <p className="text-sm text-gray-500">
-                  Nessun contatto disponibile — aggiungine uno dalla sezione Contatti.
-                </p>
-              ) : (
-                <>
-                  <p className="text-sm text-gray-500 mb-3">Seleziona uno o più proprietari:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {contacts.map(contact => {
-                      const selected = formData.ownerIds.includes(contact.id);
-                      return (
-                        <button
-                          key={contact.id}
-                          type="button"
-                          onClick={() => toggleOwner(contact.id)}
-                          className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                            selected
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                          }`}
-                        >
-                          {selected && <span className="mr-1">✓</span>}
-                          {nomeContatto(contact)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {formData.ownerIds.length > 0 && (
-                    <p className="text-xs text-blue-600 mt-2">
-                      {formData.ownerIds.length} proprietario/i selezionato/i
-                    </p>
-                  )}
-                </>
-              )}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Proprietario</label>
+                  <select name="ownerId" value={formData.ownerId} onChange={handleChange} className="input-field">
+                    <option value="">— Seleziona un proprietario —</option>
+                    {contacts.map(contact => (
+                      <option key={contact.id} value={contact.id}>
+                        {nomeContatto(contact)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {contacts.length === 0 ? (
+                  <p className="text-sm text-gray-500">
+                    Nessun contatto disponibile — aggiungine uno dalla sezione Contatti.
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-sm text-gray-500 mb-3">Seleziona uno o più proprietari aggiuntivi:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {contacts.map(contact => {
+                        const selected = formData.ownerIds.includes(contact.id);
+                        return (
+                          <button
+                            key={contact.id}
+                            type="button"
+                            onClick={() => toggleOwner(contact.id)}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                              selected
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                            }`}
+                          >
+                            {selected && <span className="mr-1">✓</span>}
+                            {nomeContatto(contact)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {formData.ownerIds.length > 0 && (
+                      <p className="text-xs text-blue-600 mt-2">
+                        {formData.ownerIds.length} proprietario/i selezionato/i
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Localizzazione */}

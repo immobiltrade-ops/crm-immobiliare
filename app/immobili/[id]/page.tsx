@@ -21,6 +21,14 @@ interface PropertyOwner {
   contact: Contact;
 }
 
+interface Opportunity {
+  id: string;
+  titolo?: string;
+  stato?: string;
+  valore?: number;
+  contact?: Contact;
+}
+
 interface PropertyDetail {
   id: string;
   titolo: string;
@@ -40,7 +48,9 @@ interface PropertyDetail {
   acceptsExchange: boolean;
   exchangeNotes?: string;
   note?: string;
-  owners: PropertyOwner[];
+  owners?: PropertyOwner[];
+  owner?: Contact | null;
+  opportunities?: Opportunity[];
   createdAt: string;
   updatedAt: string;
 }
@@ -56,6 +66,7 @@ export default function DettaglioImmobilePage() {
   const [property, setProperty] = useState<PropertyDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [opportunities, setOpportunities] = useState<any[]>([]);
   const [showEditForm, setShowEditForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
@@ -75,6 +86,7 @@ export default function DettaglioImmobilePage() {
     provincia: '',
     descrizione: '',
     caratteristiche: [] as string[],
+    ownerId: '',
     ownerIds: [] as string[],
     acceptsExchange: false,
     exchangeNotes: '',
@@ -82,7 +94,11 @@ export default function DettaglioImmobilePage() {
   });
 
   useEffect(() => {
-    if (params.id) fetchProperty(params.id as string);
+    if (params.id) {
+      const id = params.id as string;
+      fetchProperty(id);
+      fetchPropertyOpportunities(id);
+    }
     fetchContacts();
   }, [params.id]);
 
@@ -118,6 +134,21 @@ export default function DettaglioImmobilePage() {
     }
   };
 
+  const fetchPropertyOpportunities = async (propertyId: string) => {
+    try {
+      const response = await fetch(`/api/opportunities?propertyId=${encodeURIComponent(propertyId)}`);
+      if (!response.ok) {
+        setOpportunities([]);
+        return;
+      }
+      const data = await response.json();
+      setOpportunities(Array.isArray(data) ? data : data?.data ?? []);
+    } catch (error) {
+      console.error('Errore nel caricamento delle opportunità:', error);
+      setOpportunities([]);
+    }
+  };
+
   const handleEdit = () => {
     if (!property) return;
     setFormData({
@@ -135,6 +166,7 @@ export default function DettaglioImmobilePage() {
       provincia:      property.provincia || '',
       descrizione:    property.descrizione || '',
       caratteristiche: property.caratteristiche || [],
+      ownerId:        property.owners?.[0]?.contactId || '',
       ownerIds:       property.owners?.map(o => o.contactId) || [],
       acceptsExchange: property.acceptsExchange || false,
       exchangeNotes:  property.exchangeNotes || '',
@@ -288,10 +320,10 @@ export default function DettaglioImmobilePage() {
                     Proprietari ({property.owners?.length || 0})
                   </span>
                   <button onClick={handleEdit} className="btn-secondary text-sm">
-                    {property.owners?.length > 0 ? 'Gestisci proprietari' : '+ Aggiungi proprietario'}
+                    {property.owners && property.owners.length > 0 ? 'Gestisci proprietari' : '+ Aggiungi proprietario'}
                   </button>
                 </div>
-                {property.owners?.length > 0 ? (
+                {property.owners && property.owners.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {property.owners.map(o => (
                       <span key={o.id} className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-800 rounded-full text-sm font-medium">
@@ -304,6 +336,39 @@ export default function DettaglioImmobilePage() {
                   <p className="text-gray-400 italic text-sm">Nessun proprietario collegato</p>
                 )}
               </div>
+            </div>
+
+            <div className="card">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Opportunità collegate</h2>
+              {opportunities.length > 0 ? (
+                <div className="space-y-3">
+                  {opportunities.map((opp) => (
+                    <div key={opp.id} className="p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <span className="font-semibold text-gray-900">{opp.titolo || 'Opportunità senza titolo'}</span>
+                        <span className="text-xs uppercase tracking-wide text-gray-500">{opp.tipo}</span>
+                      </div>
+                      <div className="text-sm text-gray-600 flex flex-wrap gap-3">
+                        <span>Stato: {
+                          ({
+                            LEAD: 'Interesse',
+                            NEGOTIATION: 'In trattativa',
+                            PROPOSAL: 'Proposta',
+                            CLOSED_WON: 'Conclusa - Venduta',
+                            CLOSED_LOST: 'Conclusa - Persa',
+                          } as Record<string, string>)[opp.stato ?? ''] || opp.stato || 'N/D'
+                        }</span>
+                        <span>Valore: €{(opp.valore || 0).toLocaleString('it-IT')}</span>
+                      </div>
+                      {opp.contact && (
+                        <div className="mt-2 text-sm text-gray-600">Contatto: {nomeContatto(opp.contact)}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500">Nessuna opportunità collegata a questo immobile.</p>
+              )}
             </div>
 
             {/* Caratteristiche */}
@@ -364,6 +429,41 @@ export default function DettaglioImmobilePage() {
               </div>
             )}
 
+            <div className="card">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Proprietario</h2>
+              {property.owner ? (
+                <p className="text-gray-900">{nomeContatto(property.owner)}</p>
+              ) : (
+                <p className="text-gray-500">Nessun proprietario collegato</p>
+              )}
+            </div>
+
+            <div className="card">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Opportunità collegate</h2>
+              {Array.isArray(property.opportunities) && property.opportunities.length > 0 ? (
+                <div className="space-y-3">
+                  {property.opportunities.map((opp) => (
+                    <div key={opp.id} className="p-4 border border-gray-200 rounded-lg">
+                      <div className="font-semibold text-gray-900 mb-2">
+                        {opp.titolo || 'Opportunità senza titolo'}
+                      </div>
+                      <div className="text-sm text-gray-600 flex flex-wrap gap-3">
+                        <span>Stato: {opp.stato || 'N/D'}</span>
+                        <span>Valore: €{(opp.valore || 0).toLocaleString('it-IT')}</span>
+                      </div>
+                      {opp.contact && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          Contatto: {nomeContatto(opp.contact)}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500">Nessuna opportunità collegata.</p>
+              )}
+            </div>
+
             {/* Descrizione */}
             {property.descrizione && (
               <div className="card">
@@ -390,41 +490,62 @@ export default function DettaglioImmobilePage() {
                 <div className="space-y-6">
 
                   {/* PROPRIETARI — selezione multipla */}
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <label className="block text-sm font-semibold text-blue-800 mb-3">
-                      👥 Proprietari — seleziona uno o più contatti
-                    </label>
-                    {contacts.length === 0 ? (
-                      <p className="text-sm text-blue-600">
-                        Nessun contatto disponibile — aggiungine uno dalla sezione Contatti.
-                      </p>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {contacts.map(contact => {
-                          const selected = formData.ownerIds.includes(contact.id);
-                          return (
-                            <button
-                              key={contact.id}
-                              type="button"
-                              onClick={() => toggleOwner(contact.id)}
-                              className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                                selected
-                                  ? 'bg-blue-600 text-white border-blue-600'
-                                  : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                              }`}
-                            >
-                              {selected && <span className="mr-1">✓</span>}
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-blue-800 mb-3">
+                        👥 Proprietario
+                      </label>
+                      {contacts.length === 0 ? (
+                        <p className="text-sm text-blue-600">
+                          Nessun contatto disponibile — aggiungine uno dalla sezione Contatti.
+                        </p>
+                      ) : (
+                        <select name="ownerId" value={formData.ownerId} onChange={handleFormChange} className="input-field w-full">
+                          <option value="">— Seleziona un proprietario —</option>
+                          {contacts.map(contact => (
+                            <option key={contact.id} value={contact.id}>
                               {nomeContatto(contact)}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                    {formData.ownerIds.length > 0 && (
-                      <p className="text-xs text-blue-600 mt-2">
-                        {formData.ownerIds.length} proprietario/i selezionato/i
-                      </p>
-                    )}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-blue-800 mb-3">
+                        👥 Proprietari aggiuntivi — seleziona uno o più contatti
+                      </label>
+                      {contacts.length === 0 ? (
+                        <p className="text-sm text-blue-600">
+                          Nessun contatto disponibile — aggiungine uno dalla sezione Contatti.
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {contacts.map(contact => {
+                            const selected = formData.ownerIds.includes(contact.id);
+                            return (
+                              <button
+                                key={contact.id}
+                                type="button"
+                                onClick={() => toggleOwner(contact.id)}
+                                className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                                  selected
+                                    ? 'bg-blue-600 text-white border-blue-600'
+                                    : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                                }`}
+                              >
+                                {selected && <span className="mr-1">✓</span>}
+                                {nomeContatto(contact)}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {formData.ownerIds.length > 0 && (
+                        <p className="text-xs text-blue-600 mt-2">
+                          {formData.ownerIds.length} proprietario/i selezionato/i
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   {/* Dati base */}

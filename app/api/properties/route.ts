@@ -71,7 +71,17 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Collega i proprietari se forniti
+    // Collega il proprietario singolo se fornito
+    if (body.ownerId) {
+      await prisma.propertyOwner.create({
+        data: {
+          propertyId: property.id,
+          contactId: body.ownerId,
+        },
+      });
+    }
+
+    // Collega i proprietari multipli se forniti
     if (Array.isArray(body.ownerIds) && body.ownerIds.length > 0) {
       await prisma.propertyOwner.createMany({
         data: body.ownerIds.map((contactId: string) => ({

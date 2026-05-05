@@ -385,7 +385,7 @@ function OppModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contatto collegato</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Contatto</label>
             <select value={formData.contactId} onChange={e => setFormData({ ...formData, contactId: e.target.value })} className="input-field">
               <option value="">— Nessun contatto —</option>
               {Array.isArray(contacts) && contacts.map(c => (
@@ -395,7 +395,7 @@ function OppModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Immobile collegato</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Immobile</label>
             <select value={formData.propertyId} onChange={e => setFormData({ ...formData, propertyId: e.target.value })} className="input-field">
               <option value="">— Nessun immobile —</option>
               {Array.isArray(properties) && properties.map(p => (

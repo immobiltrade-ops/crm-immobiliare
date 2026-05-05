@@ -31,7 +31,7 @@ export default function NuovaOpportunitaPage() {
     try {
       const response = await fetch('/api/contacts');
       const data = await response.json();
-      setContacts(data);
+      setContacts(Array.isArray(data) ? data : data?.data ?? []);
     } catch (error) {
       console.error('Errore nel caricamento contatti:', error);
     }
@@ -41,7 +41,7 @@ export default function NuovaOpportunitaPage() {
     try {
       const response = await fetch('/api/properties');
       const data = await response.json();
-      setProperties(data);
+      setProperties(Array.isArray(data) ? data : data?.data ?? []);
     } catch (error) {
       console.error('Errore nel caricamento immobili:', error);
     }
