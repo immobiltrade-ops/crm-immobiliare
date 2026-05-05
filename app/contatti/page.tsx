@@ -118,7 +118,7 @@ export default function ContactsPage() {
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
             </div>
-          ) : contacts.length === 0 ? (
+          ) : !Array.isArray(contacts) || contacts.length === 0 ? (
             <div className="card text-center py-12">
               <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Nessun contatto trovato</h3>

@@ -147,14 +147,14 @@ export default function DashboardPage() {
                   </button>
                 </div>
 
-                {appuntamentiOggi.length === 0 ? (
+                {Array.isArray(appuntamentiOggi) && appuntamentiOggi.length === 0 ? (
                   <div className="text-center py-8 text-gray-400">
                     <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">Nessun appuntamento oggi</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {appuntamentiOggi.map((app: any) => (
+                    {Array.isArray(appuntamentiOggi) && appuntamentiOggi.map((app: any) => (
                       <div key={app.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                         <div className="w-2 h-2 rounded-full bg-primary-500 mt-2 flex-shrink-0"></div>
                         <div className="flex-1 min-w-0">
@@ -180,14 +180,14 @@ export default function DashboardPage() {
                   </button>
                 </div>
 
-                {ultimiImmobili.length === 0 ? (
+                {Array.isArray(ultimiImmobili) && ultimiImmobili.length === 0 ? (
                   <div className="text-center py-8 text-gray-400">
                     <Building2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">Nessun immobile inserito</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {ultimiImmobili.map((p: any) => (
+                    {Array.isArray(ultimiImmobili) && ultimiImmobili.map((p: any) => (
                       <div
                         key={p.id}
                         onClick={() => router.push(`/immobili/${p.id}`)}

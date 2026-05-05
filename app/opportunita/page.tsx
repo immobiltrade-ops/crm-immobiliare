@@ -113,6 +113,10 @@ export default function OpportunitiesPage() {
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
             </div>
+          ) : !Array.isArray(opportunities) ? (
+            <div className="card text-center py-16 text-gray-500">
+              Errore nel caricamento delle opportunità.
+            </div>
           ) : (
             <div className="flex gap-4 min-w-max">
               {stages.map(([stageId, { label, color }]) => {
@@ -384,7 +388,7 @@ function OppModal({
             <label className="block text-sm font-medium text-gray-700 mb-1">Contatto collegato</label>
             <select value={formData.contactId} onChange={e => setFormData({ ...formData, contactId: e.target.value })} className="input-field">
               <option value="">— Nessun contatto —</option>
-              {contacts.map(c => (
+              {Array.isArray(contacts) && contacts.map(c => (
                 <option key={c.id} value={c.id}>{nomeContatto(c)}</option>
               ))}
             </select>
@@ -394,7 +398,7 @@ function OppModal({
             <label className="block text-sm font-medium text-gray-700 mb-1">Immobile collegato</label>
             <select value={formData.propertyId} onChange={e => setFormData({ ...formData, propertyId: e.target.value })} className="input-field">
               <option value="">— Nessun immobile —</option>
-              {properties.map(p => (
+              {Array.isArray(properties) && properties.map(p => (
                 <option key={p.id} value={p.id}>
                   {p.titolo || p.indirizzo || 'Immobile senza titolo'}
                 </option>

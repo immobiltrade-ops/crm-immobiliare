@@ -183,6 +183,10 @@ export default function AgendaPage() {
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
             </div>
+          ) : !Array.isArray(activities) ? (
+            <div className="card text-center py-16 text-gray-500">
+              Errore nel caricamento delle attività.
+            </div>
           ) : (
             <>
               {/* Settimana */}
@@ -222,7 +226,7 @@ export default function AgendaPage() {
                 </h3>
 
                 <div className="space-y-3">
-                  {getActivitiesForDate(selectedDate).map((activity) => {
+                  {Array.isArray(getActivitiesForDate(selectedDate)) && getActivitiesForDate(selectedDate).map((activity) => {
                     const Icon = tipoIcons[activity.tipo?.toUpperCase()] || Target;
                     return (
                       <div
@@ -363,7 +367,7 @@ export default function AgendaPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Contatto</label>
                 <select name="contactId" value={formData.contactId} onChange={handleChange} className="input-field">
                   <option value="">— Nessun contatto —</option>
-                  {contacts.map(c => (
+                  {Array.isArray(contacts) && contacts.map(c => (
                     <option key={c.id} value={c.id}>{nomeContatto(c)}</option>
                   ))}
                 </select>
@@ -373,7 +377,7 @@ export default function AgendaPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Immobile</label>
                 <select name="propertyId" value={formData.propertyId} onChange={handleChange} className="input-field">
                   <option value="">— Nessun immobile —</option>
-                  {properties.map(p => (
+                  {Array.isArray(properties) && properties.map(p => (
                     <option key={p.id} value={p.id}>
                       {p.titolo || p.indirizzo || 'Immobile senza titolo'}
                     </option>

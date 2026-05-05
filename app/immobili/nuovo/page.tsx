@@ -300,6 +300,23 @@ export default function NuovoImmobilePage() {
               )}
             </div>
 
+            {/* Permuta */}
+            <div className="card bg-purple-50 border-purple-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Permuta</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" name="acceptsExchange" checked={formData.acceptsExchange} onChange={handleChange} className="rounded" />
+                    <span className="text-sm font-medium text-gray-700">Accetta permuta</span>
+                  </label>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Note permuta</label>
+                  <textarea name="exchangeNotes" value={formData.exchangeNotes} onChange={handleChange} rows={3} className="input-field" placeholder="Descrivi le condizioni di permuta accettate..." />
+                </div>
+              </div>
+            </div>
+
             {/* Pulsanti */}
             <div className="flex justify-end gap-3 pb-6">
               <button type="button" onClick={() => router.back()} className="btn-secondary">
