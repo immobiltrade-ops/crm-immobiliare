@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -41,13 +43,13 @@ export async function PUT(
     const appointment = await prisma.appointment.update({
       where: { id: params.id },
       data: {
-        titolo: body.titolo,
-        tipo: body.tipo,
-        data: new Date(body.data),
-        durata: body.durata,
-        contactId: body.contactId,
+        titolo:     body.titolo,
+        tipo:       body.tipo,
+        data:       new Date(body.data),
+        durata:     body.durata,
+        contactId:  body.contactId,
         propertyId: body.propertyId,
-        note: body.note,
+        note:       body.note,
       },
       include: {
         contact: true,
