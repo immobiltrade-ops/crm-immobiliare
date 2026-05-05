@@ -9,7 +9,7 @@ const globalForPrisma = globalThis as unknown as {
 function getDatabaseUrl(): string {
   const baseUrl = process.env.DATABASE_URL || '';
   if (!baseUrl) {
-    throw new Error('DATABASE_URL is not set');
+    return '';
   }
   
   // Aggiungi parametri Neon se non presenti
