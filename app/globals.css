@@ -14,7 +14,7 @@
 
 @layer components {
   .btn {
-    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 inline-flex items-center justify-center;
   }
 
   .btn-primary {
@@ -33,7 +33,7 @@
     @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6;
   }
 
-  .input {
+  .input-field {
     @apply w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
   }
 
@@ -59,6 +59,10 @@
 
   .badge-info {
     @apply bg-blue-100 text-blue-800;
+  }
+
+  .badge-permuta {
+    @apply bg-permuta-100 text-permuta-800;
   }
 
   .badge-gray {

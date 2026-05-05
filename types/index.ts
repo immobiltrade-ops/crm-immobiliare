@@ -27,24 +27,51 @@ export interface User {
 
 export interface Contact {
   id: string;
-  type: ContactType;
-  name: string;
-  surname?: string;
+  type?: ContactType;
+  tipo?: string;
+  firstName?: string;
+  lastName?: string;
+  nome?: string;
+  cognome?: string;
+  ragioneSociale?: string;
   companyName?: string;
   fiscalCode?: string;
   vatNumber?: string;
   phone?: string;
+  telefono?: string;
+  cellulare?: string;
   email?: string;
   address?: string;
-  roles: ContactRole[];
+  indirizzo?: string;
+  citta?: string;
+  cap?: string;
+  provincia?: string;
+  codiceFiscale?: string;
+  partitaIva?: string;
+  roles?: ContactRole[];
+  ruoli?: string[];
+  interessi?: string[];
+  budgetMin?: number;
+  budgetMax?: number;
   source?: string;
-  referentAgent?: string;
+  notes?: string;
+  note?: string;
+  tags?: string[];
+  consensoPrivacy?: boolean;
+  consensoMarketing?: boolean;
   privacyConsent?: boolean;
   privacyConsentDate?: string;
-  notes?: string;
-  tags?: string[];
+  properties?: Property[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface PropertyOwner {
+  id: string;
+  propertyId: string;
+  contactId: string;
+  quota?: number;
+  contact: Contact;
 }
 
 export interface NeedProfile {
@@ -63,62 +90,91 @@ export interface NeedProfile {
 
 export interface Property {
   id: string;
-  internalCode: string;
-  address: string;
+  internalCode?: string;
+  titolo?: string;
+  // indirizzo in entrambe le forme
+  address?: string;
   addressMasked?: string;
-  city: string;
-  province: string;
-  zipCode: string;
+  indirizzo?: string;
+  city?: string;
+  citta?: string;
+  province?: string;
+  provincia?: string;
+  zipCode?: string;
+  cap?: string;
   lat?: number;
   lng?: number;
-  type: PropertyType;
-  category: PropertyCategory;
+  type?: PropertyType;
+  tipo?: string;
+  category?: PropertyCategory;
+  stato?: string;
+  status?: PropertyStatus;
   cadastralData?: {
     sheet?: string;
     parcel?: string;
     sub?: string;
     category?: string;
   };
-  surface: number;
+  surface?: number;
+  superficie?: number;
   rooms?: number;
+  locali?: number;
   bedrooms?: number;
   bathrooms?: number;
+  bagni?: number;
   floor?: number;
+  piano?: string;
   totalFloors?: number;
   yearBuilt?: number;
   energyClass?: string;
   heating?: string;
   condition?: string;
   features?: string[];
+  caratteristiche?: string[];
   monthlyExpenses?: number;
-  price: number;
-  status: PropertyStatus;
-  visibility: PropertyVisibility;
-  exclusive: boolean;
+  price?: number;
+  prezzo?: number;
+  visibility?: PropertyVisibility;
+  exclusive?: boolean;
   mandateDate?: string;
   mandateExpiry?: string;
   description?: string;
+  descrizione?: string;
   images?: string[];
   documents?: string[];
+  // proprietario singolo (legacy)
   ownerId?: string;
+  owner?: Contact;
+  // proprietari multipli (nuovo)
+  owners?: PropertyOwner[];
   agentId?: string;
+  acceptsExchange?: boolean;
+  exchangeNotes?: string;
+  note?: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface Opportunity {
   id: string;
-  type: OpportunityType;
-  propertyId: string;
-  contactId: string;
-  agentId: string;
-  stage: OpportunityStage;
-  status: OpportunityStatus;
-  probability: number;
-  expectedValue: number;
+  type?: OpportunityType;
+  tipo?: string;
+  stato?: string;
+  titolo?: string;
+  propertyId?: string;
+  contactId?: string;
+  agentId?: string;
+  stage?: OpportunityStage;
+  status?: OpportunityStatus;
+  probability?: number;
+  valore?: number;
+  expectedValue?: number;
   expectedCloseDate?: string;
   notes?: string;
+  note?: string;
   lostReason?: string;
+  contact?: Contact;
+  property?: Property;
   createdAt: string;
   updatedAt: string;
 }
@@ -139,6 +195,9 @@ export interface Activity {
   status: ActivityStatus;
   createdAt: string;
   updatedAt: string;
+  contact?: Contact;
+  property?: Property;
+  assignee?: User;
 }
 
 export interface DashboardStats {

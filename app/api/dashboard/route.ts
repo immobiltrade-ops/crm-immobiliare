@@ -1,56 +1,85 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { DashboardStats, PipelineData } from '@/types';
+import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {
-    const activeOpportunities = db.opportunities.filter(o => o.status === 'active');
-    const thisMonth = new Date();
-    thisMonth.setDate(1);
-    thisMonth.setHours(0, 0, 0, 0);
+    // Count contacts
+    const totalContacts = await prisma.contact.count();
 
-    const stats: DashboardStats = {
-      totalContacts: db.contacts.length,
-      activeLeads: db.contacts.filter(c => c.roles.includes('buyer') || c.roles.includes('tenant')).length,
-      totalProperties: db.properties.length,
-      availableProperties: db.properties.filter(p => p.status === 'available').length,
-      activeOpportunities: activeOpportunities.length,
-      opportunitiesValue: activeOpportunities.reduce((sum, o) => sum + o.expectedValue, 0),
-      thisMonthActivities: db.activities.filter(a => 
-        new Date(a.createdAt) >= thisMonth
-      ).length,
-      conversionRate: activeOpportunities.length > 0 
-        ? (db.opportunities.filter(o => o.status === 'won').length / db.opportunities.length) * 100 
-        : 0,
-    };
-
-    // Pipeline data
-    const stageOrder = ['new_lead', 'qualified', 'visit', 'proposal', 'negotiation', 'closing'];
-    const pipelineData: PipelineData[] = stageOrder.map(stage => {
-      const opps = activeOpportunities.filter(o => o.stage === stage);
-      return {
-        stage: stage as any,
-        count: opps.length,
-        value: opps.reduce((sum, o) => sum + o.expectedValue, 0),
-      };
+    // Count properties
+    const totalProperties = await prisma.property.count();
+    const availableProperties = await prisma.property.count({
+      where: { stato: 'DISPONIBILE' },
     });
 
-    // Recent activities
-    const recentActivities = db.activities
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 10)
-      .map(activity => {
-        const contact = activity.contactId ? db.contacts.find(c => c.id === activity.contactId) : null;
-        const property = activity.propertyId ? db.properties.find(p => p.id === activity.propertyId) : null;
-        const assignee = db.users.find(u => u.id === activity.assignedTo);
+    // Count opportunities
+    const activeOpportunities = await prisma.opportunity.count({
+      where: { stato: 'LEAD' },
+    });
 
+    const wonOpportunities = await prisma.opportunity.count({
+      where: { stato: 'CLOSED_WON' },
+    });
+
+    // Calculate total value of active opportunities
+    const opportunitiesWithValue = await prisma.opportunity.findMany({
+      where: { stato: 'LEAD' },
+      select: { valore: true },
+    });
+    const opportunitiesValue = opportunitiesWithValue.reduce(
+      (sum: number, o: { valore: number | null }) => sum + (o.valore || 0),
+      0
+    );
+
+    // Count appointments this month
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const thisMonthActivities = await prisma.appointment.count({
+      where: {
+        data: { gte: startOfMonth },
+      },
+    });
+
+    // Calculate conversion rate
+    const totalOpportunities = await prisma.opportunity.count();
+    const conversionRate = totalOpportunities > 0 
+      ? (wonOpportunities / totalOpportunities) * 100 
+      : 0;
+
+    const stats = {
+      totalContacts,
+      activeLeads: totalContacts, // Using total contacts as proxy
+      totalProperties,
+      availableProperties,
+      activeOpportunities,
+      opportunitiesValue,
+      thisMonthActivities,
+      conversionRate,
+    };
+
+    // Pipeline data by type (using stato as stage)
+    const stageOrder = ['LEAD', 'NEGOTIATION', 'PROPOSAL', 'CLOSED_WON', 'CLOSED_LOST'];
+    const pipelineData = await Promise.all(
+      stageOrder.map(async (stage) => {
+        const opps = await prisma.opportunity.findMany({
+          where: { stato: stage },
+          select: { valore: true },
+        });
         return {
-          ...activity,
-          contact,
-          property,
-          assignee,
+          stage,
+          count: opps.length,
+          value: opps.reduce((sum: number, o: { valore: number | null }) => sum + (o.valore || 0), 0),
         };
-      });
+      })
+    );
+
+    // Recent appointments
+    const recentActivities = await prisma.appointment.findMany({
+      orderBy: { data: 'desc' },
+      take: 10,
+    });
 
     return NextResponse.json({
       stats,
@@ -58,6 +87,7 @@ export async function GET() {
       recentActivities,
     });
   } catch (error) {
+    console.error('Error fetching dashboard:', error);
     return NextResponse.json(
       { error: 'Errore nel recupero dei dati dashboard' },
       { status: 500 }

@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import prisma from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const contact = db.contacts.find(c => c.id === params.id);
-    
+    const contact = await prisma.contact.findUnique({
+      where: { id: params.id },
+    });
+
     if (!contact) {
       return NextResponse.json(
         { error: 'Contatto non trovato' },
@@ -17,6 +19,7 @@ export async function GET(
 
     return NextResponse.json(contact);
   } catch (error) {
+    console.error('Error fetching contact:', error);
     return NextResponse.json(
       { error: 'Errore nel recupero del contatto' },
       { status: 500 }
@@ -30,24 +33,36 @@ export async function PUT(
 ) {
   try {
     const body = await request.json();
-    const index = db.contacts.findIndex(c => c.id === params.id);
-    
-    if (index === -1) {
-      return NextResponse.json(
-        { error: 'Contatto non trovato' },
-        { status: 404 }
-      );
-    }
 
-    db.contacts[index] = {
-      ...db.contacts[index],
-      ...body,
-      id: params.id,
-      updatedAt: new Date().toISOString(),
-    };
+    const contact = await prisma.contact.update({
+      where: { id: params.id },
+      data: {
+        tipo: body.tipo,
+        nome: body.nome,
+        cognome: body.cognome,
+        ragioneSociale: body.ragioneSociale,
+        email: body.email,
+        telefono: body.telefono,
+        cellulare: body.cellulare,
+        indirizzo: body.indirizzo,
+        citta: body.citta,
+        cap: body.cap,
+        provincia: body.provincia,
+        codiceFiscale: body.codiceFiscale,
+        partitaIva: body.partitaIva,
+        ruoli: body.ruoli,
+        interessi: body.interessi,
+        budgetMin: body.budgetMin,
+        budgetMax: body.budgetMax,
+        note: body.note,
+        consensoPrivacy: body.consensoPrivacy,
+        consensoMarketing: body.consensoMarketing,
+      },
+    });
 
-    return NextResponse.json(db.contacts[index]);
+    return NextResponse.json(contact);
   } catch (error) {
+    console.error('Error updating contact:', error);
     return NextResponse.json(
       { error: 'Errore nell\'aggiornamento del contatto' },
       { status: 500 }
@@ -60,19 +75,13 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const index = db.contacts.findIndex(c => c.id === params.id);
-    
-    if (index === -1) {
-      return NextResponse.json(
-        { error: 'Contatto non trovato' },
-        { status: 404 }
-      );
-    }
-
-    db.contacts.splice(index, 1);
+    await prisma.contact.delete({
+      where: { id: params.id },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Error deleting contact:', error);
     return NextResponse.json(
       { error: 'Errore nell\'eliminazione del contatto' },
       { status: 500 }

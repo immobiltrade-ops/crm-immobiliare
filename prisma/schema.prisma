@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Contact {
+  id                String              @id @default(cuid())
+  tipo              String              @default("PERSONA_FISICA")
+  nome              String?
+  cognome           String?
+  ragioneSociale    String?
+  email             String?
+  telefono          String?
+  cellulare         String?
+  indirizzo         String?
+  citta             String?
+  cap               String?
+  provincia         String?
+  codiceFiscale     String?
+  partitaIva        String?
+  ruoli             String[]            @default([])
+  interessi         String[]            @default([])
+  budgetMin         Float?
+  budgetMax         Float?
+  note              String?
+  consensoPrivacy   Boolean             @default(false)
+  consensoMarketing Boolean             @default(false)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  files             ContactFile[]
+  appointments      Appointment[]
+  opportunities     Opportunity[]
+  ownedProperties   PropertyOwner[]
+}
+
+model ContactFile {
+  id        String   @id @default(cuid())
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  nome      String
+  url       String
+  size      Int?
+  tipo      String?
+  createdAt DateTime @default(now())
+}
+
+model Property {
+  id              String          @id @default(cuid())
+  titolo          String
+  tipo            String          @default("APPARTAMENTO")
+  stato           String          @default("DISPONIBILE")
+  prezzo          Float?
+  superficie      Float?
+  locali          Int?
+  bagni           Int?
+  piano           String?
+  indirizzo       String?
+  citta           String?
+  cap             String?
+  provincia       String?
+  descrizione     String?
+  caratteristiche String[]        @default([])
+  acceptsExchange Boolean         @default(false)
+  exchangeNotes   String?
+  note            String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  owners          PropertyOwner[]
+  appointments    Appointment[]
+  opportunities   Opportunity[]
+}
+
+model PropertyOwner {
+  id         String   @id @default(cuid())
+  propertyId String
+  contactId  String
+  quota      Float?
+  createdAt  DateTime @default(now())
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  contact    Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, contactId])
+}
+
+model Opportunity {
+  id         String    @id @default(cuid())
+  titolo     String
+  tipo       String    @default("VENDITA")
+  stato      String    @default("NEW")
+  valore     Float?
+  contactId  String?
+  propertyId String?
+  note       String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  contact    Contact?  @relation(fields: [contactId], references: [id])
+  property   Property? @relation(fields: [propertyId], references: [id])
+}
+
+model Appointment {
+  id         String   @id @default(cuid())
+  titolo     String
+  tipo       String   @default("VISITA")
+  data       DateTime
+  durata     Int?
+  contactId  String?
+  propertyId String?
+  note       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  contact    Contact? @relation(fields: [contactId], references: [id])
+  property   Property? @relation(fields: [propertyId], references: [id])
+}

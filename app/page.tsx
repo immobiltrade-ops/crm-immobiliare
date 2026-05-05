@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { DashboardStats, PipelineData } from '@/types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { opportunityStatusLabels } from '@/lib/constants';
 
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -40,14 +41,7 @@ export default function Dashboard() {
     }
   };
 
-  const stageLabels: Record<string, string> = {
-    new_lead: 'Nuovo Lead',
-    qualified: 'Qualificato',
-    visit: 'Visita',
-    proposal: 'Proposta',
-    negotiation: 'Trattativa',
-    closing: 'Chiusura',
-  };
+  const stageLabels: Record<string, string> = opportunityStatusLabels;
 
   const activityTypeLabels: Record<string, string> = {
     call: 'Chiamata',

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, generateId } from '@/lib/db';
-import { Property } from '@/types';
+import prisma from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,34 +9,33 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type');
     const city = searchParams.get('city');
 
-    let properties = db.properties;
+    const where: any = {};
 
     if (search) {
-      const searchLower = search.toLowerCase();
-      properties = properties.filter(p => 
-        p.internalCode.toLowerCase().includes(searchLower) ||
-        p.address.toLowerCase().includes(searchLower) ||
-        p.city.toLowerCase().includes(searchLower) ||
-        p.description?.toLowerCase().includes(searchLower)
-      );
+      where.OR = [
+        { titolo: { contains: search, mode: 'insensitive' } },
+        { indirizzo: { contains: search, mode: 'insensitive' } },
+        { citta: { contains: search, mode: 'insensitive' } },
+        { descrizione: { contains: search, mode: 'insensitive' } },
+      ];
     }
+    if (status) where.stato = status;
+    if (type) where.tipo = type;
+    if (city) where.citta = { equals: city, mode: 'insensitive' };
 
-    if (status) {
-      properties = properties.filter(p => p.status === status);
-    }
-
-    if (type) {
-      properties = properties.filter(p => p.type === type);
-    }
-
-    if (city) {
-      properties = properties.filter(p => 
-        p.city.toLowerCase() === city.toLowerCase()
-      );
-    }
+    const properties = await prisma.property.findMany({
+      where,
+      include: {
+        owners: {
+          include: { contact: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
     return NextResponse.json(properties);
   } catch (error) {
+    console.error('Error fetching properties:', error);
     return NextResponse.json(
       { error: 'Errore nel recupero degli immobili' },
       { status: 500 }
@@ -48,19 +46,48 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
-    const newProperty: Property = {
-      id: generateId(),
-      internalCode: `TO-${generateId()}-2024`,
-      ...body,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
 
-    db.properties.push(newProperty);
+    const property = await prisma.property.create({
+      data: {
+        titolo: body.titolo,
+        tipo: body.tipo || 'APPARTAMENTO',
+        stato: body.stato || 'DISPONIBILE',
+        prezzo: body.prezzo,
+        superficie: body.superficie,
+        locali: body.locali,
+        bagni: body.bagni,
+        piano: body.piano,
+        indirizzo: body.indirizzo,
+        citta: body.citta,
+        cap: body.cap,
+        provincia: body.provincia,
+        descrizione: body.descrizione,
+        caratteristiche: body.caratteristiche || [],
+        acceptsExchange: body.acceptsExchange || false,
+        exchangeNotes: body.exchangeNotes,
+        note: body.note,
+      },
+    });
 
-    return NextResponse.json(newProperty, { status: 201 });
+    // Collega i proprietari se forniti
+    if (Array.isArray(body.ownerIds) && body.ownerIds.length > 0) {
+      await prisma.propertyOwner.createMany({
+        data: body.ownerIds.map((contactId: string) => ({
+          propertyId: property.id,
+          contactId,
+        })),
+        skipDuplicates: true,
+      });
+    }
+
+    const result = await prisma.property.findUnique({
+      where: { id: property.id },
+      include: { owners: { include: { contact: true } } },
+    });
+
+    return NextResponse.json(result, { status: 201 });
   } catch (error) {
+    console.error('Error creating property:', error);
     return NextResponse.json(
       { error: 'Errore nella creazione dell\'immobile' },
       { status: 500 }

@@ -1,7 +1,8 @@
 'use client';
 
-import { Search, Bell, Plus } from 'lucide-react';
+import { Search, Bell, Plus, ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
+import Link from 'next/link';
 
 interface HeaderProps {
   title: string;
@@ -9,6 +10,8 @@ interface HeaderProps {
   newButtonText?: string;
   showSearch?: boolean;
   onSearch?: (query: string) => void;
+  showBackButton?: boolean;
+  onBack?: () => void;
 }
 
 export default function Header({ 
@@ -16,7 +19,9 @@ export default function Header({
   onNewClick, 
   newButtonText = 'Nuovo',
   showSearch = false,
-  onSearch 
+  onSearch,
+  showBackButton = false,
+  onBack
 }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -30,7 +35,15 @@ export default function Header({
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
       <div className="flex items-center justify-between px-6 py-4">
-        <div className="flex-1">
+        <div className="flex items-center gap-4 flex-1">
+          {showBackButton && (
+            <button
+              onClick={onBack}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
           <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
         </div>
 

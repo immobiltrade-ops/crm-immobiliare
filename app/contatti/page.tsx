@@ -3,8 +3,41 @@
 import { useEffect, useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
-import { Contact } from '@/types';
-import { Mail, Phone, MapPin, Tag, X, Plus, Edit, Trash2, Building, User, Users } from 'lucide-react';
+import { Mail, Phone, MapPin, X, Plus, Edit, Trash2, Building, User } from 'lucide-react';
+
+interface Contact {
+  id: string;
+  tipo: string;
+  nome?: string;
+  cognome?: string;
+  ragioneSociale?: string;
+  email?: string;
+  telefono?: string;
+  cellulare?: string;
+  indirizzo?: string;
+  citta?: string;
+  cap?: string;
+  provincia?: string;
+  codiceFiscale?: string;
+  partitaIva?: string;
+  ruoli: string[];
+  note?: string;
+  createdAt?: string;
+}
+
+const ruoliLabels: Record<string, string> = {
+  PROPRIETARIO: 'Proprietario',
+  ACQUIRENTE: 'Acquirente',
+  CONDUTTORE: 'Conduttore',
+  LOCATORE: 'Locatore',
+  INVESTITORE: 'Investitore',
+  PARTNER: 'Partner',
+};
+
+const nomeContatto = (c: Contact) =>
+  c.tipo === 'PERSONA_FISICA'
+    ? `${c.nome || ''} ${c.cognome || ''}`.trim() || 'Senza nome'
+    : c.ragioneSociale || 'Senza ragione sociale';
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -23,10 +56,12 @@ export default function ContactsPage() {
       const params = new URLSearchParams();
       if (searchQuery) params.append('search', searchQuery);
       if (filterRole) params.append('role', filterRole);
-      
+
       const response = await fetch(`/api/contacts?${params}`);
+      if (!response.ok) { setContacts([]); return; }
       const data = await response.json();
-      setContacts(data);
+      const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+      setContacts(list);
     } catch (error) {
       console.error('Errore nel caricamento dei contatti:', error);
     } finally {
@@ -36,59 +71,42 @@ export default function ContactsPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Sei sicuro di voler eliminare questo contatto?')) return;
-
     try {
       await fetch(`/api/contacts/${id}`, { method: 'DELETE' });
       fetchContacts();
     } catch (error) {
-      console.error('Errore nell\'eliminazione:', error);
+      console.error('Errore eliminazione:', error);
     }
-  };
-
-  const roleLabels: Record<string, string> = {
-    owner: 'Proprietario',
-    buyer: 'Acquirente',
-    tenant: 'Conduttore',
-    landlord: 'Locatore',
-    investor: 'Investitore',
-    partner: 'Partner',
   };
 
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      
+
       <div className="flex-1 flex flex-col lg:ml-64 overflow-hidden">
-        <Header 
-          title="Contatti" 
-          onNewClick={() => {
-            setEditingContact(null);
-            setShowModal(true);
-          }}
+        <Header
+          title="Contatti"
+          onNewClick={() => { setEditingContact(null); setShowModal(true); }}
           newButtonText="Nuovo Contatto"
           showSearch
           onSearch={setSearchQuery}
         />
-        
+
         <main className="flex-1 overflow-y-auto p-6">
-          {/* Filters */}
+          {/* Filtri ruolo */}
           <div className="card mb-6">
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setFilterRole('')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  filterRole === '' ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterRole === '' ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
               >
                 Tutti
               </button>
-              {Object.entries(roleLabels).map(([key, label]) => (
+              {Object.entries(ruoliLabels).map(([key, label]) => (
                 <button
                   key={key}
                   onClick={() => setFilterRole(key)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    filterRole === key ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filterRole === key ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                 >
                   {label}
                 </button>
@@ -96,7 +114,6 @@ export default function ContactsPage() {
             </div>
           </div>
 
-          {/* Contacts Grid */}
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -106,10 +123,7 @@ export default function ContactsPage() {
               <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Nessun contatto trovato</h3>
               <p className="text-gray-600 mb-4">Inizia aggiungendo il tuo primo contatto</p>
-              <button
-                onClick={() => setShowModal(true)}
-                className="btn btn-primary inline-flex items-center gap-2"
-              >
+              <button onClick={() => setShowModal(true)} className="btn-primary inline-flex items-center gap-2">
                 <Plus className="w-5 h-5" />
                 Nuovo Contatto
               </button>
@@ -120,30 +134,20 @@ export default function ContactsPage() {
                 <div key={contact.id} className="card hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        contact.type === 'company' ? 'bg-purple-100' : 'bg-blue-100'
-                      }`}>
-                        {contact.type === 'company' ? (
-                          <Building className={`w-6 h-6 ${contact.type === 'company' ? 'text-purple-600' : 'text-blue-600'}`} />
-                        ) : (
-                          <User className="w-6 h-6 text-blue-600" />
-                        )}
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${contact.tipo === 'AZIENDA' ? 'bg-purple-100' : 'bg-blue-100'}`}>
+                        {contact.tipo === 'AZIENDA'
+                          ? <Building className="w-6 h-6 text-purple-600" />
+                          : <User className="w-6 h-6 text-blue-600" />
+                        }
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900">
-                          {contact.type === 'company' 
-                            ? contact.companyName 
-                            : `${contact.name} ${contact.surname || ''}`}
-                        </h3>
-                        <p className="text-xs text-gray-500">{contact.type === 'company' ? 'Azienda' : 'Persona'}</p>
+                        <h3 className="font-semibold text-gray-900">{nomeContatto(contact)}</h3>
+                        <p className="text-xs text-gray-500">{contact.tipo === 'AZIENDA' ? 'Azienda' : 'Persona'}</p>
                       </div>
                     </div>
                     <div className="flex gap-1">
                       <button
-                        onClick={() => {
-                          setEditingContact(contact);
-                          setShowModal(true);
-                        }}
+                        onClick={() => { setEditingContact(contact); setShowModal(true); }}
                         className="p-1.5 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded transition-colors"
                       >
                         <Edit className="w-4 h-4" />
@@ -164,34 +168,25 @@ export default function ContactsPage() {
                         <span className="truncate">{contact.email}</span>
                       </div>
                     )}
-                    {contact.phone && (
+                    {(contact.cellulare || contact.telefono) && (
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Phone className="w-4 h-4 flex-shrink-0" />
-                        <span>{contact.phone}</span>
+                        <span>{contact.cellulare || contact.telefono}</span>
                       </div>
                     )}
-                    {contact.address && (
+                    {contact.indirizzo && (
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <MapPin className="w-4 h-4 flex-shrink-0" />
-                        <span className="truncate">{contact.address}</span>
+                        <span className="truncate">{contact.indirizzo}{contact.citta ? `, ${contact.citta}` : ''}</span>
                       </div>
                     )}
                   </div>
 
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {contact.roles.map((role) => (
-                      <span key={role} className="badge badge-info">
-                        {roleLabels[role]}
-                      </span>
-                    ))}
-                  </div>
-
-                  {contact.tags && contact.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {contact.tags.map((tag, idx) => (
-                        <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                          <Tag className="w-3 h-3" />
-                          {tag}
+                  {Array.isArray(contact.ruoli) && contact.ruoli.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {contact.ruoli.map((ruolo) => (
+                        <span key={ruolo} className="badge badge-info">
+                          {ruoliLabels[ruolo] || ruolo}
                         </span>
                       ))}
                     </div>
@@ -203,69 +198,68 @@ export default function ContactsPage() {
         </main>
       </div>
 
-      {/* Modal */}
       {showModal && (
         <ContactModal
           contact={editingContact}
-          onClose={() => {
-            setShowModal(false);
-            setEditingContact(null);
-          }}
-          onSave={() => {
-            setShowModal(false);
-            setEditingContact(null);
-            fetchContacts();
-          }}
+          onClose={() => { setShowModal(false); setEditingContact(null); }}
+          onSave={() => { setShowModal(false); setEditingContact(null); fetchContacts(); }}
         />
       )}
     </div>
   );
 }
 
-function ContactModal({ 
-  contact, 
-  onClose, 
-  onSave 
-}: { 
-  contact: Contact | null; 
-  onClose: () => void; 
+function ContactModal({
+  contact,
+  onClose,
+  onSave,
+}: {
+  contact: Contact | null;
+  onClose: () => void;
   onSave: () => void;
 }) {
-  const [formData, setFormData] = useState<Partial<Contact>>(
-    contact || {
-      type: 'person',
-      roles: [],
-      tags: [],
-    }
-  );
+  const [formData, setFormData] = useState({
+    tipo: contact?.tipo || 'PERSONA_FISICA',
+    nome: contact?.nome || '',
+    cognome: contact?.cognome || '',
+    ragioneSociale: contact?.ragioneSociale || '',
+    email: contact?.email || '',
+    telefono: contact?.telefono || '',
+    cellulare: contact?.cellulare || '',
+    indirizzo: contact?.indirizzo || '',
+    citta: contact?.citta || '',
+    cap: contact?.cap || '',
+    provincia: contact?.provincia || '',
+    codiceFiscale: contact?.codiceFiscale || '',
+    partitaIva: contact?.partitaIva || '',
+    ruoli: contact?.ruoli || [] as string[],
+    note: contact?.note || '',
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     try {
       const url = contact ? `/api/contacts/${contact.id}` : '/api/contacts';
       const method = contact ? 'PUT' : 'POST';
-      
-      await fetch(url, {
+      const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
-      
-      onSave();
+      if (response.ok) onSave();
+      else console.error('Errore salvataggio:', await response.text());
     } catch (error) {
       console.error('Errore nel salvataggio:', error);
     }
   };
 
-  const toggleRole = (role: string) => {
-    const roles = formData.roles || [];
-    setFormData({
-      ...formData,
-      roles: roles.includes(role as any)
-        ? roles.filter(r => r !== role)
-        : [...roles, role as any],
-    });
+  const toggleRuolo = (ruolo: string) => {
+    setFormData(prev => ({
+      ...prev,
+      ruoli: prev.ruoli.includes(ruolo)
+        ? prev.ruoli.filter(r => r !== ruolo)
+        : [...prev.ruoli, ruolo],
+    }));
   };
 
   return (
@@ -281,148 +275,181 @@ function ContactModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Type */}
+
+          {/* Tipo */}
           <div>
-            <label className="label">Tipo</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
             <div className="flex gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
-                  value="person"
-                  checked={formData.type === 'person'}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                  className="text-primary-600"
+                  value="PERSONA_FISICA"
+                  checked={formData.tipo === 'PERSONA_FISICA'}
+                  onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
                 />
                 <span>Persona</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
-                  value="company"
-                  checked={formData.type === 'company'}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                  className="text-primary-600"
+                  value="AZIENDA"
+                  checked={formData.tipo === 'AZIENDA'}
+                  onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
                 />
                 <span>Azienda</span>
               </label>
             </div>
           </div>
 
-          {/* Name fields */}
-          {formData.type === 'person' ? (
+          {/* Nome / Cognome o Ragione Sociale */}
+          {formData.tipo === 'PERSONA_FISICA' ? (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="label">Nome *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
                 <input
                   type="text"
                   required
-                  value={formData.name || ''}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="input"
+                  value={formData.nome}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  className="input-field"
                 />
               </div>
               <div>
-                <label className="label">Cognome</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cognome</label>
                 <input
                   type="text"
-                  value={formData.surname || ''}
-                  onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
-                  className="input"
+                  value={formData.cognome}
+                  onChange={(e) => setFormData({ ...formData, cognome: e.target.value })}
+                  className="input-field"
                 />
               </div>
             </div>
           ) : (
             <div>
-              <label className="label">Ragione Sociale *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ragione Sociale *</label>
               <input
                 type="text"
                 required
-                value={formData.companyName || ''}
-                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                className="input"
+                value={formData.ragioneSociale}
+                onChange={(e) => setFormData({ ...formData, ragioneSociale: e.target.value })}
+                className="input-field"
               />
             </div>
           )}
 
-          {/* Contact info */}
+          {/* Email e Telefono */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label">Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
                 type="email"
-                value={formData.email || ''}
+                value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="input"
+                className="input-field"
               />
             </div>
             <div>
-              <label className="label">Telefono</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Cellulare</label>
               <input
                 type="tel"
-                value={formData.phone || ''}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="input"
+                value={formData.cellulare}
+                onChange={(e) => setFormData({ ...formData, cellulare: e.target.value })}
+                className="input-field"
               />
             </div>
           </div>
 
-          {/* Address */}
-          <div>
-            <label className="label">Indirizzo</label>
-            <input
-              type="text"
-              value={formData.address || ''}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              className="input"
-            />
+          {/* Indirizzo */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Indirizzo</label>
+              <input
+                type="text"
+                value={formData.indirizzo}
+                onChange={(e) => setFormData({ ...formData, indirizzo: e.target.value })}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Città</label>
+              <input
+                type="text"
+                value={formData.citta}
+                onChange={(e) => setFormData({ ...formData, citta: e.target.value })}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">CAP</label>
+              <input
+                type="text"
+                value={formData.cap}
+                onChange={(e) => setFormData({ ...formData, cap: e.target.value })}
+                className="input-field"
+              />
+            </div>
           </div>
 
-          {/* Roles */}
+          {/* Codice Fiscale / P.IVA */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Codice Fiscale</label>
+              <input
+                type="text"
+                value={formData.codiceFiscale}
+                onChange={(e) => setFormData({ ...formData, codiceFiscale: e.target.value })}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Partita IVA</label>
+              <input
+                type="text"
+                value={formData.partitaIva}
+                onChange={(e) => setFormData({ ...formData, partitaIva: e.target.value })}
+                className="input-field"
+              />
+            </div>
+          </div>
+
+          {/* Ruoli */}
           <div>
-            <label className="label">Ruoli</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Ruoli</label>
             <div className="flex flex-wrap gap-2">
-              {['owner', 'buyer', 'tenant', 'landlord', 'investor', 'partner'].map((role) => (
+              {Object.entries(ruoliLabels).map(([key, label]) => (
                 <button
-                  key={role}
+                  key={key}
                   type="button"
-                  onClick={() => toggleRole(role)}
+                  onClick={() => toggleRuolo(key)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    formData.roles?.includes(role as any)
+                    formData.ruoli.includes(key)
                       ? 'bg-primary-100 text-primary-700'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  {role === 'owner' && 'Proprietario'}
-                  {role === 'buyer' && 'Acquirente'}
-                  {role === 'tenant' && 'Conduttore'}
-                  {role === 'landlord' && 'Locatore'}
-                  {role === 'investor' && 'Investitore'}
-                  {role === 'partner' && 'Partner'}
+                  {label}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Notes */}
+          {/* Note */}
           <div>
-            <label className="label">Note</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Note</label>
             <textarea
               rows={3}
-              value={formData.notes || ''}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="input"
+              value={formData.note}
+              onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+              className="input-field"
             />
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-4">
-            <button type="submit" className="btn btn-primary flex-1">
-              Salva
-            </button>
-            <button type="button" onClick={onClose} className="btn btn-secondary">
-              Annulla
-            </button>
+          {/* Pulsanti */}
+          <div className="flex gap-3 pt-4 border-t">
+            <button type="submit" className="btn-primary flex-1">Salva</button>
+            <button type="button" onClick={onClose} className="btn-secondary">Annulla</button>
           </div>
+
         </form>
       </div>
     </div>

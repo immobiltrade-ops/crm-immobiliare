@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, generateId } from '@/lib/db';
-import { Contact } from '@/types';
+import prisma from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,24 +7,29 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const role = searchParams.get('role');
 
-    let contacts = db.contacts;
+    const where: any = {};
 
     if (search) {
-      const searchLower = search.toLowerCase();
-      contacts = contacts.filter(c => 
-        c.name?.toLowerCase().includes(searchLower) ||
-        c.surname?.toLowerCase().includes(searchLower) ||
-        c.companyName?.toLowerCase().includes(searchLower) ||
-        c.email?.toLowerCase().includes(searchLower)
-      );
+      where.OR = [
+        { nome: { contains: search, mode: 'insensitive' } },
+        { cognome: { contains: search, mode: 'insensitive' } },
+        { ragioneSociale: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
     if (role) {
-      contacts = contacts.filter(c => c.roles.includes(role as any));
+      where.ruoli = { has: role };
     }
+
+    const contacts = await prisma.contact.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
 
     return NextResponse.json(contacts);
   } catch (error) {
+    console.error('Error fetching contacts:', error);
     return NextResponse.json(
       { error: 'Errore nel recupero dei contatti' },
       { status: 500 }
@@ -36,18 +40,35 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
-    const newContact: Contact = {
-      id: generateId(),
-      ...body,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
 
-    db.contacts.push(newContact);
+    const contact = await prisma.contact.create({
+      data: {
+        tipo: body.tipo || 'PERSONA_FISICA',
+        nome: body.nome,
+        cognome: body.cognome,
+        ragioneSociale: body.ragioneSociale,
+        email: body.email,
+        telefono: body.telefono,
+        cellulare: body.cellulare,
+        indirizzo: body.indirizzo,
+        citta: body.citta,
+        cap: body.cap,
+        provincia: body.provincia,
+        codiceFiscale: body.codiceFiscale,
+        partitaIva: body.partitaIva,
+        ruoli: body.ruoli || [],
+        interessi: body.interessi || [],
+        budgetMin: body.budgetMin,
+        budgetMax: body.budgetMax,
+        note: body.note,
+        consensoPrivacy: body.consensoPrivacy || false,
+        consensoMarketing: body.consensoMarketing || false,
+      },
+    });
 
-    return NextResponse.json(newContact, { status: 201 });
+    return NextResponse.json(contact, { status: 201 });
   } catch (error) {
+    console.error('Error creating contact:', error);
     return NextResponse.json(
       { error: 'Errore nella creazione del contatto' },
       { status: 500 }

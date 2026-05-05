@@ -1,44 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, generateId } from '@/lib/db';
-import { Opportunity } from '@/types';
+import prisma from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status');
     const stage = searchParams.get('stage');
-    const agentId = searchParams.get('agentId');
+    const contactId = searchParams.get('contactId');
+    const propertyId = searchParams.get('propertyId');
 
-    let opportunities = db.opportunities;
+    const where: any = {};
 
     if (status) {
-      opportunities = opportunities.filter(o => o.status === status);
+      where.stato = status;
     }
 
     if (stage) {
-      opportunities = opportunities.filter(o => o.stage === stage);
+      where.stato = stage;
     }
 
-    if (agentId) {
-      opportunities = opportunities.filter(o => o.agentId === agentId);
+    if (contactId) {
+      where.contactId = contactId;
     }
 
-    // Arricchisci con dati di property e contact
-    const enrichedOpportunities = opportunities.map(opp => {
-      const property = db.properties.find(p => p.id === opp.propertyId);
-      const contact = db.contacts.find(c => c.id === opp.contactId);
-      const agent = db.users.find(u => u.id === opp.agentId);
+    if (propertyId) {
+      where.propertyId = propertyId;
+    }
 
-      return {
-        ...opp,
-        property,
-        contact,
-        agent,
-      };
+    const opportunities = await prisma.opportunity.findMany({
+      where,
+      include: {
+        contact: true,
+        property: true,
+      },
+      orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json(enrichedOpportunities);
+    return NextResponse.json(opportunities);
   } catch (error) {
+    console.error('Error fetching opportunities:', error);
     return NextResponse.json(
       { error: 'Errore nel recupero delle opportunità' },
       { status: 500 }
@@ -49,18 +49,22 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
-    const newOpportunity: Opportunity = {
-      id: generateId(),
-      ...body,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
 
-    db.opportunities.push(newOpportunity);
+    const opportunity = await prisma.opportunity.create({
+      data: {
+        titolo: body.titolo,
+        tipo: body.tipo || 'VENDITA',
+        stato: body.stato || 'LEAD',
+        valore: body.valore,
+        contactId: body.contactId,
+        propertyId: body.propertyId,
+        note: body.note,
+      },
+    });
 
-    return NextResponse.json(newOpportunity, { status: 201 });
+    return NextResponse.json(opportunity, { status: 201 });
   } catch (error) {
+    console.error('Error creating opportunity:', error);
     return NextResponse.json(
       { error: 'Errore nella creazione dell\'opportunità' },
       { status: 500 }
