@@ -13,6 +13,7 @@ model User {
   email     String   @unique
   name      String?
   password  String?
+  ruolo     String   @default("AGENTE")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -76,6 +77,7 @@ model Property {
   caratteristiche String[]        @default([])
   acceptsExchange Boolean         @default(false)
   exchangeNotes   String?
+  internalCode    String?
   note            String?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
@@ -112,17 +114,17 @@ model Opportunity {
 }
 
 model Appointment {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   titolo     String
-  tipo       String   @default("VISITA")
+  tipo       String    @default("VISITA")
   data       DateTime
   durata     Int?
   contactId  String?
   propertyId String?
   note       String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  contact    Contact? @relation(fields: [contactId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  contact    Contact?  @relation(fields: [contactId], references: [id])
   property   Property? @relation(fields: [propertyId], references: [id])
 }
 

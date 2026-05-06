@@ -3,6 +3,13 @@ import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
+function generateInternalCode(citta: string | undefined, prezzo: number | undefined): string {
+  const prefix = (citta || 'IMM').substring(0, 3).toUpperCase();
+  if (!prezzo) return prefix;
+  const priceK = Math.round(prezzo / 1000);
+  return `${prefix}${priceK}`;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -48,7 +55,8 @@ export async function PUT(
   try {
     const body = await request.json();
 
-    // Aggiorna i dati base dell'immobile
+    const internalCode = body.internalCode || generateInternalCode(body.citta, body.prezzo);
+
     const property = await prisma.property.update({
       where: { id: params.id },
       data: {
@@ -68,18 +76,16 @@ export async function PUT(
         caratteristiche: body.caratteristiche || [],
         acceptsExchange: body.acceptsExchange || false,
         exchangeNotes:   body.exchangeNotes,
+        internalCode,
         note:            body.note,
       },
     });
 
-    // Aggiorna i proprietari se ownerIds è presente nella richiesta
     if (Array.isArray(body.ownerIds)) {
-      // Rimuove tutti i proprietari esistenti
       await prisma.propertyOwner.deleteMany({
         where: { propertyId: params.id },
       });
 
-      // Reinserisce i nuovi
       if (body.ownerIds.length > 0) {
         await prisma.propertyOwner.createMany({
           data: body.ownerIds.map((contactId: string) => ({
@@ -91,7 +97,6 @@ export async function PUT(
       }
     }
 
-    // Collega o aggiorna il proprietario singolo se fornito
     if (body.ownerId) {
       await prisma.propertyOwner.upsert({
         where: {

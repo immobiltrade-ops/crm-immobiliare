@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-
 export const dynamic = 'force-dynamic';
+
+function generateInternalCode(citta: string | undefined, prezzo: number | undefined): string {
+  const prefix = (citta || 'IMM').substring(0, 3).toUpperCase();
+  if (!prezzo) return prefix;
+  const priceK = Math.round(prezzo / 1000);
+  return `${prefix}${priceK}`;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,9 +16,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const type = searchParams.get('type');
     const city = searchParams.get('city');
-
     const where: any = {};
-
     if (search) {
       where.OR = [
         { titolo: { contains: search, mode: 'insensitive' } },
@@ -24,7 +28,6 @@ export async function GET(request: NextRequest) {
     if (status) where.stato = status;
     if (type) where.tipo = type;
     if (city) where.citta = { equals: city, mode: 'insensitive' };
-
     const properties = await prisma.property.findMany({
       where,
       include: {
@@ -34,7 +37,6 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { createdAt: 'desc' },
     });
-
     return NextResponse.json(properties);
   } catch (error) {
     console.error('Error fetching properties:', error);
@@ -48,6 +50,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+
+    const internalCode = body.internalCode || generateInternalCode(body.citta, body.prezzo);
 
     const property = await prisma.property.create({
       data: {
@@ -67,11 +71,11 @@ export async function POST(request: NextRequest) {
         caratteristiche: body.caratteristiche || [],
         acceptsExchange: body.acceptsExchange || false,
         exchangeNotes: body.exchangeNotes,
+        internalCode,
         note: body.note,
       },
     });
 
-    // Collega il proprietario singolo se fornito
     if (body.ownerId) {
       await prisma.propertyOwner.create({
         data: {
@@ -81,7 +85,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Collega i proprietari multipli se forniti
     if (Array.isArray(body.ownerIds) && body.ownerIds.length > 0) {
       await prisma.propertyOwner.createMany({
         data: body.ownerIds.map((contactId: string) => ({

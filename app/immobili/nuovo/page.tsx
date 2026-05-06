@@ -35,6 +35,7 @@ export default function NuovoImmobilePage() {
     ownerIds: [] as string[],
     acceptsExchange: false,
     exchangeNotes: '',
+    internalCode: '',
     note: '',
   });
 
@@ -146,6 +147,13 @@ export default function NuovoImmobilePage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Titolo *</label>
                   <input type="text" name="titolo" required value={formData.titolo} onChange={handleChange} className="input-field" placeholder="Es. Bilocale centro storico" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Codice Interno
+                    <span className="ml-2 text-xs text-gray-400 font-normal">— lascia vuoto per generarlo automaticamente</span>
+                  </label>
+                  <input type="text" name="internalCode" value={formData.internalCode} onChange={handleChange} className="input-field font-mono" placeholder="Es. GAL320" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Tipo Immobile</label>
@@ -287,12 +295,6 @@ export default function NuovoImmobilePage() {
               <textarea name="descrizione" value={formData.descrizione} onChange={handleChange} rows={4} className="input-field" placeholder="Descrizione dell'immobile..." />
             </div>
 
-            {/* Note interne */}
-            <div className="card">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Note Interne</h2>
-              <textarea name="note" value={formData.note} onChange={handleChange} rows={3} className="input-field" placeholder="Note visibili solo internamente..." />
-            </div>
-
             {/* Permuta */}
             <div className="card">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Permuta</h2>
@@ -314,21 +316,10 @@ export default function NuovoImmobilePage() {
               )}
             </div>
 
-            {/* Permuta */}
-            <div className="card bg-purple-50 border-purple-200">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Permuta</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" name="acceptsExchange" checked={formData.acceptsExchange} onChange={handleChange} className="rounded" />
-                    <span className="text-sm font-medium text-gray-700">Accetta permuta</span>
-                  </label>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Note permuta</label>
-                  <textarea name="exchangeNotes" value={formData.exchangeNotes} onChange={handleChange} rows={3} className="input-field" placeholder="Descrivi le condizioni di permuta accettate..." />
-                </div>
-              </div>
+            {/* Note interne */}
+            <div className="card">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Note Interne</h2>
+              <textarea name="note" value={formData.note} onChange={handleChange} rows={3} className="input-field" placeholder="Note visibili solo internamente..." />
             </div>
 
             {/* Pulsanti */}

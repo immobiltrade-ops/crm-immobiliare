@@ -32,8 +32,8 @@ export default function Dashboard() {
       const response = await fetch('/api/dashboard');
       const data = await response.json();
       setStats(data.stats);
-      setPipelineData(data.pipelineData);
-      setRecentActivities(data.recentActivities);
+      setPipelineData(data.pipelineData || []);
+      setRecentActivities(data.recentActivities || []);
     } catch (error) {
       console.error('Errore nel caricamento della dashboard:', error);
     } finally {
@@ -49,6 +49,9 @@ export default function Dashboard() {
     visit: 'Visita',
     meeting: 'Appuntamento',
     task: 'Task',
+    VISITA: 'Visita',
+    CHIAMATA: 'Chiamata',
+    APPUNTAMENTO: 'Appuntamento',
   };
 
   const activityTypeIcons: Record<string, any> = {
@@ -57,6 +60,9 @@ export default function Dashboard() {
     visit: Building2,
     meeting: Calendar,
     task: Target,
+    VISITA: Building2,
+    CHIAMATA: Phone,
+    APPUNTAMENTO: Calendar,
   };
 
   if (loading) {
@@ -176,44 +182,46 @@ export default function Dashboard() {
             <div className="card">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Attività Recenti</h3>
               <div className="space-y-4 max-h-80 overflow-y-auto">
-                {recentActivities.map((activity) => {
-                  const Icon = activityTypeIcons[activity.type] || Target;
-                  return (
-                    <div key={activity.id} className="flex gap-3 pb-4 border-b border-gray-100 last:border-0">
-                      <div className="p-2 bg-gray-100 rounded-lg h-fit">
-                        <Icon className="w-4 h-4 text-gray-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {activity.title}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {activityTypeLabels[activity.type]} • {activity.assignee?.name}
-                        </p>
-                        {activity.contact && (
-                          <p className="text-xs text-gray-600 mt-1">
-                            {activity.contact.name} {activity.contact.surname}
+                {recentActivities.length === 0 ? (
+                  <p className="text-sm text-gray-500">Nessuna attività recente.</p>
+                ) : (
+                  recentActivities.map((activity) => {
+                    const Icon = activityTypeIcons[activity.tipo] || Target;
+                    return (
+                      <div key={activity.id} className="flex gap-3 pb-4 border-b border-gray-100 last:border-0">
+                        <div className="p-2 bg-gray-100 rounded-lg h-fit">
+                          <Icon className="w-4 h-4 text-gray-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {activity.titolo}
                           </p>
-                        )}
-                        <p className="text-xs text-gray-400 mt-1">
-                          {new Date(activity.scheduledDate || activity.createdAt).toLocaleDateString('it-IT', {
-                            day: 'numeric',
-                            month: 'short',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {activityTypeLabels[activity.tipo] || activity.tipo}
+                          </p>
+                          {activity.contact && (
+                            <p className="text-xs text-gray-600 mt-1">
+                              {activity.contact.nome} {activity.contact.cognome}
+                            </p>
+                          )}
+                          {activity.property && (
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {activity.property.titolo}
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-400 mt-1">
+                            {new Date(activity.data).toLocaleDateString('it-IT', {
+                              day: 'numeric',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        {activity.status === 'completed' ? (
-                          <span className="badge badge-success">Completata</span>
-                        ) : (
-                          <span className="badge badge-warning">Pianificata</span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>

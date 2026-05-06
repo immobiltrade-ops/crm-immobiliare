@@ -47,6 +47,7 @@ interface PropertyDetail {
   caratteristiche: string[];
   acceptsExchange: boolean;
   exchangeNotes?: string;
+  internalCode?: string;
   note?: string;
   owners?: PropertyOwner[];
   owner?: Contact | null;
@@ -90,6 +91,7 @@ export default function DettaglioImmobilePage() {
     ownerIds: [] as string[],
     acceptsExchange: false,
     exchangeNotes: '',
+    internalCode: '',
     note: '',
   });
 
@@ -152,25 +154,26 @@ export default function DettaglioImmobilePage() {
   const handleEdit = () => {
     if (!property) return;
     setFormData({
-      titolo:         property.titolo || '',
-      tipo:           property.tipo || 'APPARTAMENTO',
-      stato:          property.stato || 'DISPONIBILE',
-      prezzo:         property.prezzo?.toString() || '',
-      superficie:     property.superficie?.toString() || '',
-      locali:         property.locali?.toString() || '',
-      bagni:          property.bagni?.toString() || '',
-      piano:          property.piano || '',
-      indirizzo:      property.indirizzo || '',
-      citta:          property.citta || '',
-      cap:            property.cap || '',
-      provincia:      property.provincia || '',
-      descrizione:    property.descrizione || '',
+      titolo:          property.titolo || '',
+      tipo:            property.tipo || 'APPARTAMENTO',
+      stato:           property.stato || 'DISPONIBILE',
+      prezzo:          property.prezzo?.toString() || '',
+      superficie:      property.superficie?.toString() || '',
+      locali:          property.locali?.toString() || '',
+      bagni:           property.bagni?.toString() || '',
+      piano:           property.piano || '',
+      indirizzo:       property.indirizzo || '',
+      citta:           property.citta || '',
+      cap:             property.cap || '',
+      provincia:       property.provincia || '',
+      descrizione:     property.descrizione || '',
       caratteristiche: property.caratteristiche || [],
-      ownerId:        property.owners?.[0]?.contactId || '',
-      ownerIds:       property.owners?.map(o => o.contactId) || [],
+      ownerId:         property.owners?.[0]?.contactId || '',
+      ownerIds:        property.owners?.map(o => o.contactId) || [],
       acceptsExchange: property.acceptsExchange || false,
-      exchangeNotes:  property.exchangeNotes || '',
-      note:           property.note || '',
+      exchangeNotes:   property.exchangeNotes || '',
+      internalCode:    property.internalCode || '',
+      note:            property.note || '',
     });
     setShowEditForm(true);
   };
@@ -282,13 +285,18 @@ export default function DettaglioImmobilePage() {
             {/* Header Card */}
             <div className="card">
               <div className="flex items-start justify-between mb-4">
-                <div>
+                <div className="flex items-center gap-3 flex-wrap">
                   <span className={`badge ${statusLabels[property.stato]?.class || 'badge-gray'}`}>
                     {statusLabels[property.stato]?.label || property.stato}
                   </span>
-                  <span className="ml-2 text-sm text-gray-500">
+                  <span className="text-sm text-gray-500">
                     {tipoLabels[property.tipo] || property.tipo}
                   </span>
+                  {property.internalCode && (
+                    <span className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs font-mono font-semibold">
+                      {property.internalCode}
+                    </span>
+                  )}
                 </div>
                 <button onClick={handleEdit} className="btn-primary flex items-center gap-2">
                   <Edit className="w-4 h-4" />
@@ -338,6 +346,7 @@ export default function DettaglioImmobilePage() {
               </div>
             </div>
 
+            {/* Opportunità collegate */}
             <div className="card">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Opportunità collegate</h2>
               {opportunities.length > 0 ? (
@@ -429,41 +438,6 @@ export default function DettaglioImmobilePage() {
               </div>
             )}
 
-            <div className="card">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Proprietario</h2>
-              {property.owner ? (
-                <p className="text-gray-900">{nomeContatto(property.owner)}</p>
-              ) : (
-                <p className="text-gray-500">Nessun proprietario collegato</p>
-              )}
-            </div>
-
-            <div className="card">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Opportunità collegate</h2>
-              {Array.isArray(property.opportunities) && property.opportunities.length > 0 ? (
-                <div className="space-y-3">
-                  {property.opportunities.map((opp) => (
-                    <div key={opp.id} className="p-4 border border-gray-200 rounded-lg">
-                      <div className="font-semibold text-gray-900 mb-2">
-                        {opp.titolo || 'Opportunità senza titolo'}
-                      </div>
-                      <div className="text-sm text-gray-600 flex flex-wrap gap-3">
-                        <span>Stato: {opp.stato || 'N/D'}</span>
-                        <span>Valore: €{(opp.valore || 0).toLocaleString('it-IT')}</span>
-                      </div>
-                      {opp.contact && (
-                        <div className="mt-2 text-sm text-gray-600">
-                          Contatto: {nomeContatto(opp.contact)}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500">Nessuna opportunità collegata.</p>
-              )}
-            </div>
-
             {/* Descrizione */}
             {property.descrizione && (
               <div className="card">
@@ -489,7 +463,7 @@ export default function DettaglioImmobilePage() {
 
                 <div className="space-y-6">
 
-                  {/* PROPRIETARI — selezione multipla */}
+                  {/* PROPRIETARI */}
                   <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 space-y-4">
                     <div>
                       <label className="block text-sm font-semibold text-blue-800 mb-3">
@@ -512,13 +486,9 @@ export default function DettaglioImmobilePage() {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-blue-800 mb-3">
-                        👥 Proprietari aggiuntivi — seleziona uno o più contatti
+                        👥 Proprietari aggiuntivi
                       </label>
-                      {contacts.length === 0 ? (
-                        <p className="text-sm text-blue-600">
-                          Nessun contatto disponibile — aggiungine uno dalla sezione Contatti.
-                        </p>
-                      ) : (
+                      {contacts.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                           {contacts.map(contact => {
                             const selected = formData.ownerIds.includes(contact.id);
@@ -555,6 +525,13 @@ export default function DettaglioImmobilePage() {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Titolo</label>
                         <input type="text" name="titolo" value={formData.titolo} onChange={handleFormChange} className="input-field" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Codice Interno
+                          <span className="ml-2 text-xs text-gray-400 font-normal">— lascia vuoto per rigenerarlo</span>
+                        </label>
+                        <input type="text" name="internalCode" value={formData.internalCode} onChange={handleFormChange} className="input-field font-mono" placeholder="Es. GAL320" />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Tipo Immobile</label>

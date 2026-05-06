@@ -1,31 +1,26 @@
 export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {
-    // Count contacts
     const totalContacts = await prisma.contact.count();
 
-    // Count properties
     const totalProperties = await prisma.property.count();
     const availableProperties = await prisma.property.count({
       where: { stato: 'DISPONIBILE' },
     });
 
-    // Count opportunities
     const activeOpportunities = await prisma.opportunity.count({
-      where: { stato: 'LEAD' },
+      where: { stato: { in: ['LEAD', 'NEGOTIATION', 'PROPOSAL'] } },
     });
 
     const wonOpportunities = await prisma.opportunity.count({
       where: { stato: 'CLOSED_WON' },
     });
 
-    // Calculate total value of active opportunities
     const opportunitiesWithValue = await prisma.opportunity.findMany({
-      where: { stato: 'LEAD' },
+      where: { stato: { in: ['LEAD', 'NEGOTIATION', 'PROPOSAL'] } },
       select: { valore: true },
     });
     const opportunitiesValue = opportunitiesWithValue.reduce(
@@ -33,26 +28,30 @@ export async function GET() {
       0
     );
 
-    // Count appointments this month
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
-
     const thisMonthActivities = await prisma.appointment.count({
+      where: { data: { gte: startOfMonth } },
+    });
+
+    const totalOpportunities = await prisma.opportunity.count();
+    const conversionRate =
+      totalOpportunities > 0
+        ? (wonOpportunities / totalOpportunities) * 100
+        : 0;
+
+    const activeLeads = await prisma.contact.count({
       where: {
-        data: { gte: startOfMonth },
+        opportunities: {
+          some: { stato: { in: ['LEAD', 'NEGOTIATION', 'PROPOSAL'] } },
+        },
       },
     });
 
-    // Calculate conversion rate
-    const totalOpportunities = await prisma.opportunity.count();
-    const conversionRate = totalOpportunities > 0 
-      ? (wonOpportunities / totalOpportunities) * 100 
-      : 0;
-
     const stats = {
       totalContacts,
-      activeLeads: totalContacts, // Using total contacts as proxy
+      activeLeads,
       totalProperties,
       availableProperties,
       activeOpportunities,
@@ -61,7 +60,6 @@ export async function GET() {
       conversionRate,
     };
 
-    // Pipeline data by type (using stato as stage)
     const stageOrder = ['LEAD', 'NEGOTIATION', 'PROPOSAL', 'CLOSED_WON', 'CLOSED_LOST'];
     const pipelineData = await Promise.all(
       stageOrder.map(async (stage) => {
@@ -72,22 +70,28 @@ export async function GET() {
         return {
           stage,
           count: opps.length,
-          value: opps.reduce((sum: number, o: { valore: number | null }) => sum + (o.valore || 0), 0),
+          value: opps.reduce(
+            (sum: number, o: { valore: number | null }) => sum + (o.valore || 0),
+            0
+          ),
         };
       })
     );
 
-    // Recent appointments
     const recentActivities = await prisma.appointment.findMany({
       orderBy: { data: 'desc' },
       take: 10,
+      include: {
+        contact: {
+          select: { nome: true, cognome: true },
+        },
+        property: {
+          select: { titolo: true },
+        },
+      },
     });
 
-    return NextResponse.json({
-      stats,
-      pipelineData,
-      recentActivities,
-    });
+    return NextResponse.json({ stats, pipelineData, recentActivities });
   } catch (error) {
     console.error('Error fetching dashboard:', error);
     return NextResponse.json(
@@ -96,4 +100,3 @@ export async function GET() {
     );
   }
 }
-
