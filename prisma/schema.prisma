@@ -125,3 +125,22 @@ model Appointment {
   contact    Contact? @relation(fields: [contactId], references: [id])
   property   Property? @relation(fields: [propertyId], references: [id])
 }
+
+model AgencySettings {
+  id                    String   @id @default(cuid())
+  nomeAgenzia           String?
+  indirizzo             String?
+  citta                 String?
+  cap                   String?
+  provincia             String?
+  telefono              String?
+  email                 String?
+  piva                  String?
+  sito                  String?
+  logoUrl               String?
+  notificaVisita        Boolean  @default(true)
+  notificaOpportunita   Boolean  @default(true)
+  notificaScadenza      Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
