@@ -11,7 +11,11 @@ export async function GET(
     const contact = await prisma.contact.findUnique({
       where: { id: params.id },
       include: {
-        properties: true,
+        ownedProperties: {
+          include: {
+            property: true,
+          },
+        },
         opportunities: {
           include: {
             property: true,

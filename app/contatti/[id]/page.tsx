@@ -24,8 +24,13 @@ interface ContactDetail {
   note?: string;
   createdAt?: string;
   updatedAt?: string;
-  properties?: PropertySummary[];
+  ownedProperties?: PropertyOwner[];
   opportunities?: OpportunitySummary[];
+}
+
+interface PropertyOwner {
+  id: string;
+  property: PropertySummary;
 }
 
 interface PropertySummary {
@@ -178,13 +183,13 @@ export default function ContattoDettaglioPage() {
 
             <div className="card">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Immobili collegati</h2>
-              {contact.properties && contact.properties.length > 0 ? (
+              {contact.ownedProperties && contact.ownedProperties.length > 0 ? (
                 <div className="space-y-3">
-                  {contact.properties.map((property) => (
-                    <div key={property.id} className="p-4 border border-gray-200 rounded-lg">
-                      <div className="font-semibold text-gray-900">{property.titolo}</div>
+                  {contact.ownedProperties.map((owner) => (
+                    <div key={owner.id} className="p-4 border border-gray-200 rounded-lg">
+                      <div className="font-semibold text-gray-900">{owner.property.titolo}</div>
                       <div className="text-sm text-gray-600">
-                        Tipo: {property.tipo || 'N/D'} | Stato: {property.stato || 'N/D'} | Prezzo: €{(property.prezzo || 0).toLocaleString('it-IT')}
+                        Tipo: {owner.property.tipo || 'N/D'} | Stato: {owner.property.stato || 'N/D'} | Prezzo: €{(owner.property.prezzo || 0).toLocaleString('it-IT')}
                       </div>
                     </div>
                   ))}
