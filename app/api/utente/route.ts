@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 
 export async function GET() {
   try {
@@ -21,12 +22,16 @@ export async function POST(request: NextRequest) {
     if (!body.email) {
       return NextResponse.json({ error: 'Email obbligatoria' }, { status: 400 });
     }
+    const data: any = {
+      name:  body.name  || '',
+      email: body.email,
+      ruolo: body.ruolo || 'AGENTE',
+    };
+    if (body.password && body.password.length >= 6) {
+      data.password = await bcrypt.hash(body.password, 12);
+    }
     const user = await prisma.user.create({
-      data: {
-        name:  body.name  || '',
-        email: body.email,
-        ruolo: body.ruolo || 'AGENTE',
-      },
+      data,
       select: { id: true, name: true, email: true, ruolo: true, createdAt: true },
     });
     return NextResponse.json(user, { status: 201 });
@@ -45,13 +50,17 @@ export async function PUT(request: NextRequest) {
     if (!body.id) {
       return NextResponse.json({ error: 'ID obbligatorio' }, { status: 400 });
     }
+    const data: any = {
+      name:  body.name,
+      email: body.email,
+      ruolo: body.ruolo,
+    };
+    if (body.password && body.password.length >= 6) {
+      data.password = await bcrypt.hash(body.password, 12);
+    }
     const user = await prisma.user.update({
       where: { id: body.id },
-      data: {
-        name:  body.name,
-        email: body.email,
-        ruolo: body.ruolo,
-      },
+      data,
       select: { id: true, name: true, email: true, ruolo: true, createdAt: true },
     });
     return NextResponse.json(user);

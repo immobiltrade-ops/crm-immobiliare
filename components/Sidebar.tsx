@@ -10,9 +10,11 @@ import {
   Calendar,
   Settings,
   Menu,
-  X
+  X,
+  LogOut,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { signOut, useSession } from 'next-auth/react';
 
 const navigation = [
   { name: 'Dashboard',    href: '/',            icon: LayoutDashboard },
@@ -41,23 +43,15 @@ function getInitials(name: string, email: string): string {
 export default function Sidebar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [utente, setUtente] = useState<{ name: string; email: string; ruolo: string } | null>(null);
+  const { data: session } = useSession();
 
-  useEffect(() => {
-    fetch('/api/utente')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          const admin = data.find((u: any) => u.ruolo === 'AMMINISTRATORE') || data[0];
-          setUtente({ name: admin.name || '', email: admin.email, ruolo: admin.ruolo });
-        }
-      })
-      .catch(() => null);
-  }, []);
-
-  const nomeVisibile = utente?.name || utente?.email || 'Utente';
-  const iniziali = utente ? getInitials(utente.name, utente.email) : '?';
-  const ruolo = utente ? (ruoloLabel[utente.ruolo] || utente.ruolo) : 'Amministratore';
+  const nomeVisibile = session?.user?.name || session?.user?.email || 'Utente';
+  const iniziali = session?.user
+    ? getInitials(session.user.name || '', session.user.email || '')
+    : '?';
+  const ruolo = session?.user
+    ? (ruoloLabel[(session.user as any).ruolo] || 'Utente')
+    : '';
 
   return (
     <>
@@ -87,6 +81,7 @@ export default function Sidebar() {
         `}
       >
         <div className="flex flex-col h-full">
+
           {/* Logo */}
           <div className="flex items-center gap-3 px-6 py-6 border-b border-gray-200">
             <Building2 className="w-8 h-8 text-primary-600" />
@@ -119,10 +114,10 @@ export default function Sidebar() {
             })}
           </nav>
 
-          {/* User info */}
-          <div className="px-6 py-4 border-t border-gray-200">
+          {/* User info + Logout */}
+          <div className="px-4 py-4 border-t border-gray-200 space-y-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
                 <span className="text-sm font-semibold text-primary-700">{iniziali}</span>
               </div>
               <div className="flex-1 min-w-0">
@@ -130,6 +125,13 @@ export default function Sidebar() {
                 <p className="text-xs text-gray-500 truncate">{ruolo}</p>
               </div>
             </div>
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Esci
+            </button>
           </div>
 
         </div>

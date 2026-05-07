@@ -37,6 +37,7 @@ interface UtenteForm {
   name: string;
   email: string;
   ruolo: string;
+  password: string;
 }
 
 const emptyAgency: AgencyForm = {
@@ -48,7 +49,7 @@ const emptyNotifiche: NotificheForm = {
   notificaVisita: true, notificaOpportunita: true, notificaScadenza: true,
 };
 
-const emptyUtenteForm: UtenteForm = { name: '', email: '', ruolo: 'AGENTE' };
+const emptyUtenteForm: UtenteForm = { name: '', email: '', ruolo: 'AGENTE', password: '' };
 
 const ruoliDisponibili = [
   { value: 'AMMINISTRATORE', label: 'Amministratore' },
@@ -152,7 +153,7 @@ export default function SettingsPage() {
 
   const handleModificaUtente = (u: Utente) => {
     setEditingId(u.id);
-    setUtenteForm({ name: u.name, email: u.email, ruolo: u.ruolo });
+    setUtenteForm({ name: u.name, email: u.email, ruolo: u.ruolo, password: '' });
     setUtenteError('');
     setShowForm(true);
   };
@@ -160,6 +161,9 @@ export default function SettingsPage() {
   const handleSalvaUtente = async () => {
     setUtenteError('');
     if (!utenteForm.email) { setUtenteError('Email obbligatoria'); return; }
+    if (!editingId && !utenteForm.password) { setUtenteError('Password obbligatoria per i nuovi utenti'); return; }
+    if (utenteForm.password && utenteForm.password.length < 6) { setUtenteError('Password minimo 6 caratteri'); return; }
+
     setUtenteSaving(true);
     try {
       const method = editingId ? 'PUT' : 'POST';
@@ -175,7 +179,7 @@ export default function SettingsPage() {
       setUtenteSaved(true);
       setTimeout(() => setUtenteSaved(false), 2500);
       fetchUtenti();
-    } catch (err) {
+    } catch {
       setUtenteError('Errore di rete');
     } finally {
       setUtenteSaving(false);
@@ -189,9 +193,7 @@ export default function SettingsPage() {
       const data = await res.json();
       if (!res.ok) { alert(data.error || 'Errore nell\'eliminazione'); return; }
       fetchUtenti();
-    } catch (err) {
-      alert('Errore di rete');
-    }
+    } catch { alert('Errore di rete'); }
   };
 
   const exportCSV = async (endpoint: string, filename: string) => {
@@ -240,7 +242,6 @@ export default function SettingsPage() {
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-3xl mx-auto">
 
-            {/* Tab bar */}
             <div className="flex gap-1 bg-gray-100 p-1 rounded-xl mb-6">
               {tabs.map((tab) => (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -341,7 +342,6 @@ export default function SettingsPage() {
                   </button>
                 </div>
 
-                {/* Form aggiunta/modifica */}
                 {showForm && (
                   <div className="card border-2 border-primary-200 space-y-4">
                     <div className="flex items-center justify-between">
@@ -352,7 +352,6 @@ export default function SettingsPage() {
                         <X className="w-5 h-5" />
                       </button>
                     </div>
-
                     <div className="grid grid-cols-1 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
@@ -375,19 +374,21 @@ export default function SettingsPage() {
                           ))}
                         </select>
                       </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Password {editingId && <span className="text-gray-400 font-normal">— lascia vuoto per non cambiarla</span>}
+                        </label>
+                        <input type="password" className="input-field" value={utenteForm.password}
+                          onChange={(e) => setUtenteForm({ ...utenteForm, password: e.target.value })}
+                          placeholder="Minimo 6 caratteri" />
+                      </div>
                     </div>
-
-                    {utenteError && (
-                      <p className="text-sm text-red-600">{utenteError}</p>
-                    )}
-
+                    {utenteError && <p className="text-sm text-red-600">{utenteError}</p>}
                     <div className="flex items-center gap-3 pt-2">
                       <button onClick={handleSalvaUtente} disabled={utenteSaving} className="btn btn-primary">
                         {utenteSaving ? 'Salvataggio...' : 'Salva'}
                       </button>
-                      <button onClick={() => setShowForm(false)} className="btn btn-secondary">
-                        Annulla
-                      </button>
+                      <button onClick={() => setShowForm(false)} className="btn btn-secondary">Annulla</button>
                       {utenteSaved && (
                         <span className="flex items-center gap-1 text-sm text-green-600 font-medium">
                           <Check className="w-4 h-4" /> Salvato
@@ -397,16 +398,13 @@ export default function SettingsPage() {
                   </div>
                 )}
 
-                {/* Lista utenti */}
                 <div className="card space-y-3">
                   {loadingUtenti ? (
                     <div className="flex justify-center py-6">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
                     </div>
                   ) : utenti.length === 0 ? (
-                    <p className="text-sm text-gray-500 text-center py-4">
-                      Nessun utente. Clicca su "Nuovo Utente" per aggiungerne uno.
-                    </p>
+                    <p className="text-sm text-gray-500 text-center py-4">Nessun utente.</p>
                   ) : (
                     utenti.map((u) => (
                       <div key={u.id} className="flex items-center justify-between gap-4 py-3 border-b border-gray-100 last:border-0">
@@ -483,7 +481,7 @@ export default function SettingsPage() {
               <div className="card space-y-5">
                 <h3 className="text-lg font-semibold text-gray-900">Dati e Privacy</h3>
                 <p className="text-sm text-gray-500">
-                  Esporta i tuoi dati in formato CSV. I file scaricati conterranno tutti i record presenti nel sistema.
+                  Esporta i tuoi dati in formato CSV.
                 </p>
                 <div className="space-y-3">
                   <button onClick={() => exportCSV('/api/contacts', 'contatti.csv')}
