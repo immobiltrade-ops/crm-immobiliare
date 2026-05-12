@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { Mail, Phone, MapPin, X, Plus, Edit, Trash2, Building, User } from 'lucide-react';
@@ -69,7 +70,9 @@ export default function ContactsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!confirm('Sei sicuro di voler eliminare questo contatto?')) return;
     try {
       await fetch(`/api/contacts/${id}`, { method: 'DELETE' });
@@ -77,6 +80,13 @@ export default function ContactsPage() {
     } catch (error) {
       console.error('Errore eliminazione:', error);
     }
+  };
+
+  const handleEdit = (contact: Contact, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditingContact(contact);
+    setShowModal(true);
   };
 
   return (
@@ -131,7 +141,11 @@ export default function ContactsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {contacts.map((contact) => (
-                <div key={contact.id} className="card hover:shadow-md transition-shadow">
+                <Link 
+                  key={contact.id} 
+                  href={`/contatti/${contact.id}`}
+                  className="card hover:shadow-md transition-shadow cursor-pointer block"
+                >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className={`w-12 h-12 rounded-full flex items-center justify-center ${contact.tipo === 'AZIENDA' ? 'bg-purple-100' : 'bg-blue-100'}`}>
@@ -147,13 +161,13 @@ export default function ContactsPage() {
                     </div>
                     <div className="flex gap-1">
                       <button
-                        onClick={() => { setEditingContact(contact); setShowModal(true); }}
+                        onClick={(e) => handleEdit(contact, e)}
                         className="p-1.5 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded transition-colors"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(contact.id)}
+                        onClick={(e) => handleDelete(contact.id, e)}
                         className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-gray-100 rounded transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -191,7 +205,7 @@ export default function ContactsPage() {
                       ))}
                     </div>
                   )}
-                </div>
+                </Link>
               ))}
             </div>
           )}
