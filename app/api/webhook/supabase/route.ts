@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       data: {
         titolo: titoloOpportunita,
         tipo: record.disponibilita === 'affitto' ? 'AFFITTO' : 'VENDITA',
-        stato: 'LEAD', // Stato iniziale nel CRM
+        stato: 'NEW', // Corrisponde alla colonna "Lead" nel kanban
         valore: record.prezzo_richiesto != null ? parseFloat(String(record.prezzo_richiesto)) : 0,
         contactId: nuovoContatto.id,
         note: `Immobile in ${record.zona || 'zona non specificata'}\nTipologia: ${record.tipologia || 'non specificata'}\nSuperficie: ${record.superficie_mq || 0} mq\nPiano: ${record.piano || 'non specificato'}\nCondizioni: ${record.condizioni_immobile || 'non specificate'}\n\nIndirizzo: ${record.indirizzo || 'non specificato'}`,
