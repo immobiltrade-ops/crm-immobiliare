@@ -27,6 +27,12 @@ interface SegnalazioneWebhook {
 }
 
 export async function POST(request: NextRequest) {
+  // Verifica header segreto
+  const secret = request.headers.get('x-webhook-secret');
+  if (!secret || secret !== process.env.WEBHOOK_SECRET) {
+    return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 });
+  }
+
   try {
     const body: SegnalazioneWebhook = await request.json();
 
